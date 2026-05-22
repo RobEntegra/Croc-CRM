@@ -379,15 +379,17 @@ let view='dashboard', selCompany=null, selContact=null;
 
 function go(v,param){
   view=v;
-  if(v==='company-detail') selCompany=param;
-  if(v==='contact-detail') selContact=param;
+  if(v==='company-detail'||v==='edit-company') selCompany=param||selCompany;
+  if(v==='contact-detail'||v==='edit-contact') selContact=param||selContact;
+  if(v==='edit-log') selLog=param;
   // nav highlight
   document.querySelectorAll('nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.view===v);
   });
   const map={dashboard:vDashboard,companies:vCompanies,contacts:vContacts,logs:vLogs,
              'add-company':vAddCompany,'add-contact':vAddContact,'add-log':vAddLog,
-             'company-detail':vCompanyDetail,'contact-detail':vContactDetail};
+             'company-detail':vCompanyDetail,'contact-detail':vContactDetail,
+             'edit-company':vEditCompany,'edit-contact':vEditContact,'edit-log':vEditLog};
   if(map[v]) map[v]();
 }
 
@@ -497,6 +499,7 @@ async function vCompanyDetail(){
           ${co.address?`<div class="detail-sub">${esc(co.address)}</div>`:''}
         </div>
         <div class="detail-actions">
+          <button class="btn btn-secondary btn-sm" onclick="go('edit-company','${co.id}')">Edit</button>
           <button class="btn btn-secondary btn-sm" onclick="go('add-contact');prefillCompany('${co.id}','${escAttr(co.name)}')">+ Add Contact</button>
         </div>
       </div>
@@ -591,6 +594,7 @@ async function vContactDetail(){
           <div class="detail-sub">${esc(ct.role)}${ct.role&&ct.companyName?' · ':''}${ct.companyName?`<button class="link-btn" style="font-size:14px" onclick="go('company-detail','${ct.companyId}')">${esc(ct.companyName)}</button>`:''}</div>
         </div>
         <div class="detail-actions">
+          <button class="btn btn-secondary btn-sm" onclick="go('edit-contact','${ct.id}')">Edit</button>
           <button class="btn btn-primary btn-sm" onclick="go('add-log');prefillContact('${ct.id}','${escAttr(contactName(ct))}','${ct.companyId}','${escAttr(ct.companyName)}')">+ Log Call</button>
         </div>
       </div>
@@ -614,6 +618,7 @@ async function vContactDetail(){
           <td>${badgeFollowUp(l)}</td>
           <td class="att-links">${attLinks(l)}</td>
           <td style="font-size:12px;color:var(--muted)">${esc(l.loggedBy)}</td>
+          <td><button class="btn btn-secondary btn-sm" onclick="go('edit-log','${l.id}')">Edit</button></td>
         </tr>`).join('')}
         </tbody></table></div>`}
   `);
@@ -863,6 +868,125 @@ async function saveLog(){
     toast('Call logged!','success');
     go('contact-detail',contactId);
   }catch(e){toast('Error saving log.','error');btn.textContent='Save Call Log';btn.disabled=false;}
+}
+
+/* ══ EDIT COMPANY ═══════════════════════════════════════════ */
+async function vEditCompany(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CO);
+  const idx=rows.findIndex(r=>r[0]===selCompany);
+  if(idx===-1){setContent('<p>Company not found.</p>');return;}
+  const co=toCompany(rows[idx]);
+  setContent(`
+    <button class="back-btn" onclick="go('company-detail','${co.id}')">← Back</button>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Edit Company</span></div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Company Name *</label><input id="eco-name" value="${escAttr(co.name)}"></div>
+        <div class="form-group"><label>Industry</label><input id="eco-industry" value="${escAttr(co.industry)}"></div>
+        <div class="form-group"><label>Phone</label><input id="eco-phone" type="tel" value="${escAttr(co.phone)}"></div>
+        <div class="form-group full"><label>Address</label><input id="eco-addr" value="${escAttr(co.address)}"></div>
+        <div class="form-group full"><label>Website</label><input id="eco-web" type="url" value="${escAttr(co.website)}"></div>
+        <div class="form-group full"><label>Notes</label><textarea id="eco-notes">${esc(co.notes)}</textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" onclick="saveEditCompany(${idx})">Save Changes</button>
+        <button class="btn btn-secondary" onclick="go('company-detail','${co.id}')">Cancel</button>
+      </div>
+    </div>`);
+}
+async function saveEditCompany(idx){
+  const name=v('eco-name');
+  if(!name){toast('Company name is required.','error');return;}
+  const rows=await getRows(SHEETS.CO);
+  const co=toCompany(rows[idx]);
+  co.name=name; co.industry=v('eco-industry'); co.phone=v('eco-phone');
+  co.address=v('eco-addr'); co.website=v('eco-web'); co.notes=v('eco-notes');
+  try{await updateRow(SHEETS.CO,idx,fromCompany(co));toast('Company updated!','success');go('company-detail',co.id);}
+  catch(e){toast('Error saving changes.','error');console.error(e);}
+}
+
+/* ══ EDIT CONTACT ═══════════════════════════════════════════ */
+async function vEditContact(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CT);
+  const idx=rows.findIndex(r=>r[0]===selContact);
+  if(idx===-1){setContent('<p>Contact not found.</p>');return;}
+  const ct=toContact(rows[idx]);
+  setContent(`
+    <button class="back-btn" onclick="go('contact-detail','${ct.id}')">← Back</button>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Edit Contact</span></div>
+      <div class="form-grid">
+        <div class="form-group"><label>First Name *</label><input id="ect-fn" value="${escAttr(ct.firstName)}"></div>
+        <div class="form-group"><label>Last Name</label><input id="ect-ln" value="${escAttr(ct.lastName)}"></div>
+        <div class="form-group"><label>Phone</label><input id="ect-ph" type="tel" value="${escAttr(ct.phone)}"></div>
+        <div class="form-group"><label>Email</label><input id="ect-em" type="email" value="${escAttr(ct.email)}"></div>
+        <div class="form-group full"><label>Role / Title</label><input id="ect-role" value="${escAttr(ct.role)}"></div>
+        <div class="form-group full"><label>Notes</label><textarea id="ect-notes">${esc(ct.notes)}</textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" onclick="saveEditContact(${idx})">Save Changes</button>
+        <button class="btn btn-secondary" onclick="go('contact-detail','${ct.id}')">Cancel</button>
+      </div>
+    </div>`);
+}
+async function saveEditContact(idx){
+  const fn=v('ect-fn');
+  if(!fn){toast('First name is required.','error');return;}
+  const rows=await getRows(SHEETS.CT);
+  const ct=toContact(rows[idx]);
+  ct.firstName=fn; ct.lastName=v('ect-ln'); ct.phone=v('ect-ph');
+  ct.email=v('ect-em'); ct.role=v('ect-role'); ct.notes=v('ect-notes');
+  try{await updateRow(SHEETS.CT,idx,fromContact(ct));toast('Contact updated!','success');go('contact-detail',ct.id);}
+  catch(e){toast('Error saving changes.','error');console.error(e);}
+}
+
+/* ══ EDIT LOG ═══════════════════════════════════════════════ */
+let selLog=null;
+async function vEditLog(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CL);
+  const idx=rows.findIndex(r=>r[0]===selLog);
+  if(idx===-1){setContent('<p>Call log not found.</p>');return;}
+  const l=toLog(rows[idx]);
+  setContent(`
+    <button class="back-btn" onclick="go('contact-detail','${l.contactId}')">← Back</button>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Edit Call Log</span></div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Contact</label><input value="${escAttr(l.contactName)} — ${escAttr(l.companyName)}" readonly style="background:var(--bg);color:var(--muted)"></div>
+        <div class="form-group"><label>Date *</label><input id="elg-date" type="date" value="${l.date}"></div>
+        <div class="form-group"><label>Time</label><input id="elg-time" type="time" value="${l.time}"></div>
+        <div class="form-group full"><label>Call Notes *</label><textarea id="elg-notes">${esc(l.notes)}</textarea></div>
+        <div class="form-group full"><label>Outcome</label><input id="elg-outcome" value="${escAttr(l.outcome)}"></div>
+        <div class="form-group">
+          <label>Follow-up Required?</label>
+          <select id="elg-fu" onchange="document.getElementById('elg-fudate-wrap').style.display=this.value==='Yes'?'':'none'">
+            <option value="No" ${l.followUp!=='Yes'?'selected':''}>No</option>
+            <option value="Yes" ${l.followUp==='Yes'?'selected':''}>Yes</option>
+          </select>
+        </div>
+        <div class="form-group" id="elg-fudate-wrap" style="${l.followUp==='Yes'?'':'display:none'}">
+          <label>Follow-up Date</label>
+          <input id="elg-fudate" type="date" value="${l.followUpDate}">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" onclick="saveEditLog(${idx})">Save Changes</button>
+        <button class="btn btn-secondary" onclick="go('contact-detail','${l.contactId}')">Cancel</button>
+      </div>
+    </div>`);
+}
+async function saveEditLog(idx){
+  const notes=v('elg-notes');
+  if(!notes){toast('Call notes are required.','error');return;}
+  const rows=await getRows(SHEETS.CL);
+  const l=toLog(rows[idx]);
+  l.date=v('elg-date'); l.time=v('elg-time'); l.notes=notes;
+  l.outcome=v('elg-outcome'); l.followUp=v('elg-fu'); l.followUpDate=v('elg-fudate')||'';
+  try{await updateRow(SHEETS.CL,idx,fromLog(l));toast('Call log updated!','success');go('contact-detail',l.contactId);}
+  catch(e){toast('Error saving changes.','error');console.error(e);}
 }
 
 /* ══ HELPERS ════════════════════════════════════════════════ */
