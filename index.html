@@ -228,7 +228,7 @@
 'use strict';
 
 /* ══ CONFIG ═════════════════════════════════════════════════ */
-let CFG = { clientId:'', apiKey:'', sheetId:'', folderId:'' };
+let CFG = { clientId:'', apiKey:'', sheetId:'', folderId:'1vRfXCjw4o_x3fvW39ZiWRJdXUqrHICYL' };
 
 const SCOPE  = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file openid email profile';
 const SHEETS = { CO:'Companies', CT:'Contacts', CL:'CallLogs' };
@@ -256,21 +256,26 @@ function showSetup(){
 /* ══ GOOGLE API ═════════════════════════════════════════════ */
 function gapiLoaded(){
   gapi.load('client',async()=>{
-    await gapi.client.init({
-      apiKey:CFG.apiKey,
-      discoveryDocs:[
-        'https://sheets.googleapis.com/$discovery/rest?version=v4',
-        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
-      ]
-    });
+    try{
+      await gapi.client.init({
+        apiKey:CFG.apiKey||'_',
+        discoveryDocs:[
+          'https://sheets.googleapis.com/$discovery/rest?version=v4',
+          'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+        ]
+      });
+    }catch(e){console.warn('GAPI init error:',e);}
     gapiOk=true; tryEnableSignIn();
   });
 }
 function gisLoaded(){
-  tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CFG.clientId, scope:SCOPE,
-    callback:handleToken
-  });
+  if(CFG.clientId){
+    try{
+      tokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:CFG.clientId, scope:SCOPE, callback:handleToken
+      });
+    }catch(e){console.warn('GIS init error:',e);}
+  }
   gisOk=true; tryEnableSignIn();
 }
 function tryEnableSignIn(){
@@ -280,6 +285,11 @@ function tryEnableSignIn(){
 }
 function signIn(){
   if(!CFG.clientId||!CFG.apiKey||!CFG.sheetId){toast('Please configure the app first.','error');showSetup();return;}
+  if(!tokenClient){
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:CFG.clientId, scope:SCOPE, callback:handleToken
+    });
+  }
   tokenClient.requestAccessToken({prompt:'consent'});
 }
 async function handleToken(resp){
@@ -309,7 +319,7 @@ async function initSheets(){
     const adds=[];
     Object.values(SHEETS).forEach(n=>{if(!existing.includes(n)) adds.push({addSheet:{properties:{title:n}}})});
     if(adds.length) await gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:CFG.sheetId,resource:{requests:adds}});
-    await ensureHdr(SHEETS.CO,['ID','Name','Address','Website','Notes','CreatedAt']);
+    await ensureHdr(SHEETS.CO,['ID','Name','Industry','Phone','Address','Website','Notes','CreatedAt']);
     await ensureHdr(SHEETS.CT,['ID','CompanyID','CompanyName','FirstName','LastName','Phone','Email','Role','Notes','CreatedAt']);
     await ensureHdr(SHEETS.CL,['ID','ContactID','ContactName','CompanyID','CompanyName','Date','Time','Notes','Outcome','FollowUp','FollowUpDate','AttachURLs','AttachNames','LoggedBy','CreatedAt']);
   }catch(e){toast('Could not access the Sheet. Check your Sheet ID and sharing settings.','error');console.error(e);}
@@ -335,8 +345,8 @@ async function updateRow(sheet,idx,row){
 }
 
 /* ── row mappers ── */
-const toCompany=r=>({id:r[0]||'',name:r[1]||'',address:r[2]||'',website:r[3]||'',notes:r[4]||'',createdAt:r[5]||''});
-const fromCompany=c=>[c.id,c.name,c.address,c.website,c.notes,c.createdAt];
+const toCompany=r=>({id:r[0]||'',name:r[1]||'',industry:r[2]||'',phone:r[3]||'',address:r[4]||'',website:r[5]||'',notes:r[6]||'',createdAt:r[7]||''});
+const fromCompany=c=>[c.id,c.name,c.industry,c.phone,c.address,c.website,c.notes,c.createdAt];
 
 const toContact=r=>({id:r[0]||'',companyId:r[1]||'',companyName:r[2]||'',firstName:r[3]||'',lastName:r[4]||'',phone:r[5]||'',email:r[6]||'',role:r[7]||'',notes:r[8]||'',createdAt:r[9]||''});
 const fromContact=c=>[c.id,c.companyId,c.companyName,c.firstName,c.lastName,c.phone,c.email,c.role,c.notes,c.createdAt];
@@ -439,23 +449,24 @@ async function vCompanies(){
     <div class="toolbar">
       <h2>Companies</h2>
       <div class="toolbar-right">
-        <button class="btn btn-secondary btn-sm" onclick="exportCSV(window._coRows,['ID','Name','Address','Website','Notes','Created'],'croc-companies.csv')">Export CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV(window._coRows,['ID','Name','Industry','Phone','Address','Website','Notes','Created'],'croc-companies.csv')">Export CSV</button>
         <button class="btn btn-primary btn-sm" onclick="go('add-company')">+ New Company</button>
       </div>
     </div>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input id="co-search" placeholder="Search companies…" oninput="filterTable('co-search','co-body',['name','address'])" autocomplete="off">
+      <input id="co-search" placeholder="Search companies…" oninput="filterTable('co-search','co-body',['name','industry','address'])" autocomplete="off">
     </div>
     <div class="table-wrap">
-      <table><thead><tr><th>Company</th><th>Address</th><th>Website</th><th></th></tr></thead>
+      <table><thead><tr><th>Company</th><th>Industry</th><th>Phone</th><th>Address</th><th></th></tr></thead>
       <tbody id="co-body">
         ${cos.length===0
-          ? '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">No companies yet. <button class="link-btn" onclick="go(\'add-company\')">Add one</button>.</td></tr>'
-          : cos.map(c=>`<tr data-name="${esc(c.name).toLowerCase()}" data-address="${esc(c.address).toLowerCase()}">
+          ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">No companies yet. <button class="link-btn" onclick="go(\'add-company\')">Add one</button>.</td></tr>'
+          : cos.map(c=>`<tr data-name="${esc(c.name).toLowerCase()}" data-industry="${esc(c.industry).toLowerCase()}" data-address="${esc(c.address).toLowerCase()}">
               <td><button class="link-btn" onclick="go('company-detail','${c.id}')">${esc(c.name)}</button></td>
+              <td>${esc(c.industry)}</td>
+              <td>${esc(c.phone)}</td>
               <td>${esc(c.address)}</td>
-              <td>${c.website?`<a href="${esc(c.website)}" target="_blank" style="color:var(--accent)">${esc(c.website)}</a>`:''}</td>
               <td><button class="btn btn-secondary btn-sm" onclick="go('company-detail','${c.id}')">View</button></td>
             </tr>`).join('')}
       </tbody></table>
@@ -485,6 +496,8 @@ async function vCompanyDetail(){
         </div>
       </div>
       <div class="info-grid">
+        <div class="info-box"><div class="info-label">Industry</div><div class="info-value">${esc(co.industry)||'—'}</div></div>
+        <div class="info-box"><div class="info-label">Phone</div><div class="info-value">${esc(co.phone)||'—'}</div></div>
         <div class="info-box"><div class="info-label">Address</div><div class="info-value">${esc(co.address)||'—'}</div></div>
         <div class="info-box"><div class="info-label">Website</div><div class="info-value">${co.website?`<a href="${esc(co.website)}" target="_blank" style="color:var(--accent)">${esc(co.website)}</a>`:'—'}</div></div>
         <div class="info-box"><div class="info-label">Contacts</div><div class="info-value">${contacts.length}</div></div>
@@ -646,6 +659,8 @@ function vAddCompany(){
       <div class="card-header"><span class="card-title">New Company</span></div>
       <div class="form-grid">
         <div class="form-group full"><label>Company Name *</label><input id="co-name" placeholder="e.g. Smith Farms"></div>
+        <div class="form-group"><label>Industry</label><input id="co-industry" placeholder="e.g. Agriculture, Mining, Construction"></div>
+        <div class="form-group"><label>Phone</label><input id="co-phone" type="tel" placeholder="e.g. 07 3000 0000"></div>
         <div class="form-group full"><label>Address</label><input id="co-addr" placeholder="Street, Town, State, Postcode"></div>
         <div class="form-group full"><label>Website</label><input id="co-web" type="url" placeholder="https://"></div>
         <div class="form-group full"><label>Notes</label><textarea id="co-notes" placeholder="General notes about this company…"></textarea></div>
@@ -660,7 +675,7 @@ function vAddCompany(){
 async function saveCompany(){
   const name=v('co-name');
   if(!name){toast('Company name is required.','error');return;}
-  const co={id:uid(),name,address:v('co-addr'),website:v('co-web'),notes:v('co-notes'),createdAt:new Date().toISOString()};
+  const co={id:uid(),name,industry:v('co-industry'),phone:v('co-phone'),address:v('co-addr'),website:v('co-web'),notes:v('co-notes'),createdAt:new Date().toISOString()};
   try{await appendRow(SHEETS.CO,fromCompany(co));toast('Company saved!','success');go('companies');}
   catch(e){toast('Error saving company.','error');console.error(e);}
 }
