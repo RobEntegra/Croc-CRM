@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CROC Trough Pump Systems — Call Log CRM</title>
+  <style>
+    :root {
+      --primary:      #2C3A47;
+      --accent:       #C49A2C;
+      --accent-hover: #a87f1f;
+      --accent-pale:  rgba(196,154,44,0.10);
+      --bg:           #F4F5F7;
+      --card:         #FFFFFF;
+      --border:       #E2E8F0;
+      --text:         #2C3A47;
+      --muted:        #718096;
+      --danger:       #E53E3E;
+      --success:      #38A169;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+    /* ── SIGN-IN ─────────────────────────────────────────── */
+    #signin-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--primary)}
+    .signin-card{background:#fff;border-radius:16px;padding:48px;text-align:center;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.25)}
+    .signin-card img{height:52px;margin-bottom:28px}
+    .signin-card h2{font-size:22px;color:var(--primary);margin-bottom:6px}
+    .signin-card p{color:var(--muted);font-size:14px;margin-bottom:28px;line-height:1.6}
+    .signin-setup-link{margin-top:18px;font-size:12px;color:#bbb}
+    .signin-setup-link a{color:var(--accent);text-decoration:none}
+
+    /* ── HEADER ──────────────────────────────────────────── */
+    header{background:var(--primary);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;box-shadow:0 2px 8px rgba(0,0,0,0.2);position:sticky;top:0;z-index:50}
+    .logo-area{display:flex;align-items:center;gap:16px}
+    .logo-area img{height:34px;filter:brightness(0) invert(1)}
+    .app-title{font-size:13px;color:rgba(255,255,255,0.55);font-weight:500;letter-spacing:0.8px;text-transform:uppercase;border-left:1px solid rgba(255,255,255,0.15);padding-left:16px}
+    .header-right{display:flex;align-items:center;gap:12px}
+    .user-name{font-size:13px;color:rgba(255,255,255,0.65)}
+    .btn-signout{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.18);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s}
+    .btn-signout:hover{background:rgba(255,255,255,0.15)}
+
+    /* ── NAV ─────────────────────────────────────────────── */
+    nav{background:var(--primary);border-top:1px solid rgba(255,255,255,0.08);display:flex;padding:0 20px;overflow-x:auto}
+    nav button{background:none;border:none;color:rgba(255,255,255,0.58);padding:11px 16px;cursor:pointer;font-size:13.5px;font-weight:500;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap}
+    nav button:hover,nav button.active{color:#fff;border-bottom-color:var(--accent)}
+    .nav-add{color:rgba(196,154,44,0.85) !important}
+    .nav-add:hover{color:var(--accent) !important}
+
+    /* ── MAIN ────────────────────────────────────────────── */
+    main{max-width:1120px;margin:0 auto;padding:32px 24px}
+
+    /* ── CARDS ───────────────────────────────────────────── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:16px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .card-title{font-size:17px;font-weight:600;color:var(--primary)}
+
+    /* ── BUTTONS ─────────────────────────────────────────── */
+    .btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:var(--accent-hover)}
+    .btn-secondary{background:transparent;color:var(--primary);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-sm{padding:5px 12px;font-size:12px;border-radius:5px}
+
+    /* ── FORMS ───────────────────────────────────────────── */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group.full{grid-column:1/-1}
+    label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px}
+    input,textarea,select{padding:10px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;color:var(--text);background:#fff;width:100%;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-pale)}
+    textarea{resize:vertical;min-height:90px}
+
+    /* ── SEARCH ──────────────────────────────────────────── */
+    .search-wrap{position:relative;margin-bottom:18px}
+    .search-wrap input{padding-left:38px}
+    .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none}
+
+    /* ── TABLES ──────────────────────────────────────────── */
+    .table-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);padding:10px 14px;border-bottom:2px solid var(--border);background:#FAFBFC}
+    td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tbody tr:hover td{background:#FAFBFC}
+
+    /* ── LINK BUTTON ─────────────────────────────────────── */
+    .link-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13.5px;font-weight:500;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px}
+
+    /* ── BADGES ──────────────────────────────────────────── */
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-yes{background:#FEF3C7;color:#92400E}
+    .badge-no{background:#F0FFF4;color:#276749}
+
+    /* ── STATS ───────────────────────────────────────────── */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+    .stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 22px}
+    .stat-value{font-size:30px;font-weight:700;color:var(--accent)}
+    .stat-label{font-size:12px;color:var(--muted);margin-top:3px}
+
+    /* ── TOOLBAR ─────────────────────────────────────────── */
+    .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+    .toolbar h2{font-size:20px;font-weight:700;color:var(--primary)}
+    .toolbar-right{display:flex;gap:8px;align-items:center}
+
+    /* ── DETAIL ──────────────────────────────────────────── */
+    .back-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13.5px;font-weight:500;padding:0 0 14px 0;display:inline-flex;align-items:center;gap:4px}
+    .detail-name{font-size:24px;font-weight:700;color:var(--primary)}
+    .detail-sub{font-size:14px;color:var(--muted);margin-top:3px}
+    .detail-actions{display:flex;gap:8px}
+    .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+    .info-box{background:var(--bg);border-radius:8px;padding:13px 15px}
+    .info-label{font-size:10.5px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:0.4px;margin-bottom:3px}
+    .info-value{font-size:14px;font-weight:500;word-break:break-word}
+
+    /* ── CONTACT CHIPS ───────────────────────────────────── */
+    .contact-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .contact-chip{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:border-color .15s;min-width:160px}
+    .contact-chip:hover{border-color:var(--accent);background:var(--accent-pale)}
+    .chip-name{font-size:14px;font-weight:600;color:var(--primary)}
+    .chip-role{font-size:12px;color:var(--muted);margin-top:2px}
+    .chip-phone{font-size:12px;color:var(--muted);margin-top:1px}
+
+    /* ── FILE UPLOAD ─────────────────────────────────────── */
+    .file-drop{border:2px dashed var(--border);border-radius:8px;padding:22px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+    .file-drop:hover,.file-drop.drag-over{border-color:var(--accent);background:var(--accent-pale)}
+    .file-drop p{color:var(--muted);font-size:13.5px;margin:0}
+    .file-item{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--bg);border-radius:6px;margin-top:6px;font-size:13px}
+    .file-remove{background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px}
+
+    /* ── ATTACHMENTS ─────────────────────────────────────── */
+    .att-links a{display:inline-block;margin:2px 3px 2px 0;padding:3px 9px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:11.5px;color:var(--accent);text-decoration:none}
+    .att-links a:hover{background:var(--accent-pale)}
+
+    /* ── MODAL ───────────────────────────────────────────── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.48);display:flex;align-items:center;justify-content:center;z-index:100}
+    .modal{background:#fff;border-radius:12px;padding:32px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25)}
+    .modal h3{font-size:19px;margin-bottom:6px;color:var(--primary)}
+    .modal .sub{color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:22px}
+    .modal .form-group{margin-bottom:14px}
+    .modal-actions{display:flex;gap:10px;margin-top:22px}
+
+    /* ── TOAST ───────────────────────────────────────────── */
+    .toast{position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13.5px;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:200;animation:slideUp .2s}
+    .toast.info{background:var(--primary)}
+    .toast.success{background:var(--success)}
+    .toast.error{background:var(--danger)}
+    @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── LOADING / EMPTY ─────────────────────────────────── */
+    .loading{text-align:center;padding:48px;color:var(--muted);font-size:14px}
+    .empty-state{text-align:center;padding:56px 24px;color:var(--muted)}
+    .empty-state h3{margin-bottom:8px;color:var(--primary);font-size:16px}
+    .empty-state p{font-size:14px}
+    .section-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin:24px 0 12px}
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media(max-width:720px){
+      .form-grid{grid-template-columns:1fr}
+      .info-grid{grid-template-columns:1fr 1fr}
+      .stats-row{grid-template-columns:1fr 1fr}
+      main{padding:16px}
+      .toolbar{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIGN-IN ══════════════════════════════════════════════ -->
+<div id="signin-screen">
+  <div class="signin-card">
+    <img id="signin-logo" src="logo22.avif" alt="CROC Trough Pump Systems">
+    <h2>Call Log CRM</h2>
+    <p>Sign in with your Google account to access the system.</p>
+    <div id="google-signin-btn"></div>
+    <p class="signin-setup-link">
+      First time? <a href="#" onclick="showSetup();return false">Configure API settings</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══ SETUP MODAL ══════════════════════════════════════════ -->
+<div id="setup-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>⚙️ Initial Setup</h3>
+    <p class="sub">
+      Enter your Google API credentials and Sheet ID. These are stored in your browser and only need to be entered once per device.
+      See the <strong>README.md</strong> for step-by-step instructions.
+    </p>
+    <div class="form-group"><label>Google OAuth Client ID *</label><input id="cfg-cid" placeholder="xxxx.apps.googleusercontent.com"></div>
+    <div class="form-group"><label>Google API Key *</label><input id="cfg-key" placeholder="AIzaSy..."></div>
+    <div class="form-group"><label>Google Sheet ID *</label><input id="cfg-sid" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></div>
+    <div class="form-group"><label>Google Drive Folder ID (optional)</label><input id="cfg-fid" placeholder="Leave blank to upload to root Drive"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Save &amp; Continue</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('setup-modal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════════ -->
+<div id="app" style="display:none">
+  <header>
+    <div class="logo-area">
+      <img src="logo22.avif" alt="CROC">
+      <span class="app-title">Call Log CRM</span>
+    </div>
+    <div class="header-right">
+      <span class="user-name" id="hdr-user"></span>
+      <button class="btn-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+  <nav id="main-nav">
+    <button onclick="go('dashboard')" data-view="dashboard" class="active">Dashboard</button>
+    <button onclick="go('companies')" data-view="companies">Companies</button>
+    <button onclick="go('contacts')"  data-view="contacts">Contacts</button>
+    <button onclick="go('logs')"      data-view="logs">Call Logs</button>
+    <button onclick="go('add-company')" data-view="add-company" class="nav-add">+ Company</button>
+    <button onclick="go('add-contact')" data-view="add-contact" class="nav-add">+ Contact</button>
+    <button onclick="go('add-log')"     data-view="add-log"     class="nav-add">+ Log Call</button>
+  </nav>
+  <main id="content"></main>
+</div>
+
+<script>
+'use strict';
+
+/* ══ CONFIG ═════════════════════════════════════════════════ */
+let CFG = { clientId:'', apiKey:'', sheetId:'', folderId:'' };
+
+const SCOPE  = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file openid email profile';
+const SHEETS = { CO:'Companies', CT:'Contacts', CL:'CallLogs' };
+
+let tokenClient, gapiOk=false, gisOk=false, curUser=null;
+
+function loadCfg(){
+  const s=localStorage.getItem('croc_cfg');
+  if(s) CFG={...CFG,...JSON.parse(s)};
+}
+function saveConfig(){
+  CFG.clientId=v('cfg-cid'); CFG.apiKey=v('cfg-key');
+  CFG.sheetId=v('cfg-sid');  CFG.folderId=v('cfg-fid');
+  if(!CFG.clientId||!CFG.apiKey||!CFG.sheetId){toast('Client ID, API Key and Sheet ID are required.','error');return;}
+  localStorage.setItem('croc_cfg',JSON.stringify(CFG));
+  document.getElementById('setup-modal').style.display='none';
+  toast('Config saved — reload the page to apply.','success');
+}
+function showSetup(){
+  sv('cfg-cid',CFG.clientId); sv('cfg-key',CFG.apiKey);
+  sv('cfg-sid',CFG.sheetId);  sv('cfg-fid',CFG.folderId);
+  document.getElementById('setup-modal').style.display='flex';
+}
+
+/* ══ GOOGLE API ═════════════════════════════════════════════ */
+function gapiLoaded(){
+  gapi.load('client',async()=>{
+    await gapi.client.init({
+      apiKey:CFG.apiKey,
+      discoveryDocs:[
+        'https://sheets.googleapis.com/$discovery/rest?version=v4',
+        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+      ]
+    });
+    gapiOk=true; tryEnableSignIn();
+  });
+}
+function gisLoaded(){
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CFG.clientId, scope:SCOPE,
+    callback:handleToken
+  });
+  gisOk=true; tryEnableSignIn();
+}
+function tryEnableSignIn(){
+  if(!gapiOk||!gisOk) return;
+  document.getElementById('google-signin-btn').innerHTML=
+    `<button class="btn btn-primary" style="width:100%;padding:12px 0;font-size:15px" onclick="signIn()">Sign in with Google</button>`;
+}
+function signIn(){
+  if(!CFG.clientId||!CFG.apiKey||!CFG.sheetId){toast('Please configure the app first.','error');showSetup();return;}
+  tokenClient.requestAccessToken({prompt:'consent'});
+}
+async function handleToken(resp){
+  if(resp.error){toast('Sign-in error: '+resp.error,'error');return;}
+  const info=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+    {headers:{Authorization:'Bearer '+gapi.client.getToken().access_token}}).then(r=>r.json());
+  curUser=info;
+  document.getElementById('hdr-user').textContent=info.name||info.email;
+  document.getElementById('signin-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  await initSheets();
+  go('dashboard');
+}
+function signOut(){
+  const t=gapi.client.getToken();
+  if(t) google.accounts.oauth2.revoke(t.access_token,()=>{});
+  gapi.client.setToken(''); curUser=null;
+  document.getElementById('signin-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+/* ══ SHEET INIT ═════════════════════════════════════════════ */
+async function initSheets(){
+  try{
+    const res=await gapi.client.sheets.spreadsheets.get({spreadsheetId:CFG.sheetId});
+    const existing=res.result.sheets.map(s=>s.properties.title);
+    const adds=[];
+    Object.values(SHEETS).forEach(n=>{if(!existing.includes(n)) adds.push({addSheet:{properties:{title:n}}})});
+    if(adds.length) await gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:CFG.sheetId,resource:{requests:adds}});
+    await ensureHdr(SHEETS.CO,['ID','Name','Address','Website','Notes','CreatedAt']);
+    await ensureHdr(SHEETS.CT,['ID','CompanyID','CompanyName','FirstName','LastName','Phone','Email','Role','Notes','CreatedAt']);
+    await ensureHdr(SHEETS.CL,['ID','ContactID','ContactName','CompanyID','CompanyName','Date','Time','Notes','Outcome','FollowUp','FollowUpDate','AttachURLs','AttachNames','LoggedBy','CreatedAt']);
+  }catch(e){toast('Could not access the Sheet. Check your Sheet ID and sharing settings.','error');console.error(e);}
+}
+async function ensureHdr(sheet,hdr){
+  const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:`${sheet}!A1:Z1`});
+  if(!r.result.values||!r.result.values.length)
+    await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`${sheet}!A1`,valueInputOption:'RAW',resource:{values:[hdr]}});
+}
+
+/* ══ DATA LAYER ═════════════════════════════════════════════ */
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+async function getRows(sheet){
+  const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:`${sheet}!A2:Z`});
+  return r.result.values||[];
+}
+async function appendRow(sheet,row){
+  await gapi.client.sheets.spreadsheets.values.append({spreadsheetId:CFG.sheetId,range:`${sheet}!A1`,valueInputOption:'RAW',insertDataOption:'INSERT_ROWS',resource:{values:[row]}});
+}
+async function updateRow(sheet,idx,row){
+  await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`${sheet}!A${idx+2}`,valueInputOption:'RAW',resource:{values:[row]}});
+}
+
+/* ── row mappers ── */
+const toCompany=r=>({id:r[0]||'',name:r[1]||'',address:r[2]||'',website:r[3]||'',notes:r[4]||'',createdAt:r[5]||''});
+const fromCompany=c=>[c.id,c.name,c.address,c.website,c.notes,c.createdAt];
+
+const toContact=r=>({id:r[0]||'',companyId:r[1]||'',companyName:r[2]||'',firstName:r[3]||'',lastName:r[4]||'',phone:r[5]||'',email:r[6]||'',role:r[7]||'',notes:r[8]||'',createdAt:r[9]||''});
+const fromContact=c=>[c.id,c.companyId,c.companyName,c.firstName,c.lastName,c.phone,c.email,c.role,c.notes,c.createdAt];
+const contactName=c=>`${c.firstName} ${c.lastName}`.trim();
+
+const toLog=r=>({id:r[0]||'',contactId:r[1]||'',contactName:r[2]||'',companyId:r[3]||'',companyName:r[4]||'',date:r[5]||'',time:r[6]||'',notes:r[7]||'',outcome:r[8]||'',followUp:r[9]||'',followUpDate:r[10]||'',attachURLs:r[11]||'',attachNames:r[12]||'',loggedBy:r[13]||'',createdAt:r[14]||''});
+const fromLog=l=>[l.id,l.contactId,l.contactName,l.companyId,l.companyName,l.date,l.time,l.notes,l.outcome,l.followUp,l.followUpDate,l.attachURLs,l.attachNames,l.loggedBy,l.createdAt];
+
+/* ══ DRIVE UPLOAD ═══════════════════════════════════════════ */
+async function uploadFile(file){
+  const tok=gapi.client.getToken().access_token;
+  const meta={name:file.name,mimeType:file.type,...(CFG.folderId?{parents:[CFG.folderId]}:{})};
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',file);
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+    {method:'POST',headers:{Authorization:'Bearer '+tok},body:form}).then(r=>r.json());
+  await fetch(`https://www.googleapis.com/drive/v3/files/${res.id}/permissions`,
+    {method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({role:'reader',type:'anyone'})});
+  return {name:res.name,url:res.webViewLink};
+}
+
+/* ══ ROUTING ════════════════════════════════════════════════ */
+let view='dashboard', selCompany=null, selContact=null;
+
+function go(v,param){
+  view=v;
+  if(v==='company-detail') selCompany=param;
+  if(v==='contact-detail') selContact=param;
+  // nav highlight
+  document.querySelectorAll('nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===v);
+  });
+  const map={dashboard:vDashboard,companies:vCompanies,contacts:vContacts,logs:vLogs,
+             'add-company':vAddCompany,'add-contact':vAddContact,'add-log':vAddLog,
+             'company-detail':vCompanyDetail,'contact-detail':vContactDetail};
+  if(map[v]) map[v]();
+}
+
+/* ══ DASHBOARD ══════════════════════════════════════════════ */
+async function vDashboard(){
+  setContent('<div class="loading">Loading…</div>');
+  const [cos,cts,cls]=await Promise.all([getRows(SHEETS.CO),getRows(SHEETS.CT),getRows(SHEETS.CL)]);
+  const logs=cls.map(toLog);
+  const today=todayStr();
+  const todayLogs=logs.filter(l=>l.date===today);
+  const upcoming=logs.filter(l=>l.followUp==='Yes'&&l.followUpDate&&l.followUpDate>=today).sort((a,b)=>a.followUpDate.localeCompare(b.followUpDate));
+
+  setContent(`
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value">${cos.length}</div><div class="stat-label">Companies</div></div>
+      <div class="stat-card"><div class="stat-value">${cts.length}</div><div class="stat-label">Contacts</div></div>
+      <div class="stat-card"><div class="stat-value">${logs.length}</div><div class="stat-label">Total Calls Logged</div></div>
+      <div class="stat-card"><div class="stat-value">${upcoming.length}</div><div class="stat-label">Follow-ups Pending</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Today's Calls &mdash; ${today}</span>
+        <button class="btn btn-primary btn-sm" onclick="go('add-log')">+ Log a Call</button>
+      </div>
+      ${todayLogs.length===0
+        ? '<div class="empty-state"><p>No calls logged today yet.</p></div>'
+        : `<div class="table-wrap"><table><thead><tr><th>Contact</th><th>Company</th><th>Time</th><th>Notes</th><th>Outcome</th><th>Follow-up</th></tr></thead><tbody>
+          ${todayLogs.map(l=>`<tr>
+            <td><button class="link-btn" onclick="go('contact-detail','${l.contactId}')">${l.contactName}</button></td>
+            <td><button class="link-btn" onclick="go('company-detail','${l.companyId}')">${l.companyName}</button></td>
+            <td>${l.time}</td>
+            <td style="max-width:260px">${esc(l.notes).slice(0,70)}${l.notes.length>70?'…':''}</td>
+            <td>${esc(l.outcome)}</td>
+            <td>${badgeFollowUp(l)}</td>
+          </tr>`).join('')}
+          </tbody></table></div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Upcoming Follow-ups</span></div>
+      ${upcoming.length===0
+        ? '<div class="empty-state"><p>No pending follow-ups.</p></div>'
+        : `<div class="table-wrap"><table><thead><tr><th>Due</th><th>Contact</th><th>Company</th><th>Call Notes</th></tr></thead><tbody>
+          ${upcoming.slice(0,15).map(l=>`<tr>
+            <td style="white-space:nowrap;font-weight:600;color:${l.followUpDate===today?'var(--danger)':'inherit'}">${l.followUpDate}</td>
+            <td><button class="link-btn" onclick="go('contact-detail','${l.contactId}')">${l.contactName}</button></td>
+            <td><button class="link-btn" onclick="go('company-detail','${l.companyId}')">${l.companyName}</button></td>
+            <td style="max-width:300px">${esc(l.notes).slice(0,80)}${l.notes.length>80?'…':''}</td>
+          </tr>`).join('')}
+          </tbody></table></div>`}
+    </div>
+  `);
+}
+
+/* ══ COMPANIES LIST ═════════════════════════════════════════ */
+async function vCompanies(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CO);
+  const cos=rows.map(toCompany);
+  window._coRows=rows;
+
+  setContent(`
+    <div class="toolbar">
+      <h2>Companies</h2>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV(window._coRows,['ID','Name','Address','Website','Notes','Created'],'croc-companies.csv')">Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="go('add-company')">+ New Company</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="co-search" placeholder="Search companies…" oninput="filterTable('co-search','co-body',['name','address'])" autocomplete="off">
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Company</th><th>Address</th><th>Website</th><th></th></tr></thead>
+      <tbody id="co-body">
+        ${cos.length===0
+          ? '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">No companies yet. <button class="link-btn" onclick="go(\'add-company\')">Add one</button>.</td></tr>'
+          : cos.map(c=>`<tr data-name="${esc(c.name).toLowerCase()}" data-address="${esc(c.address).toLowerCase()}">
+              <td><button class="link-btn" onclick="go('company-detail','${c.id}')">${esc(c.name)}</button></td>
+              <td>${esc(c.address)}</td>
+              <td>${c.website?`<a href="${esc(c.website)}" target="_blank" style="color:var(--accent)">${esc(c.website)}</a>`:''}</td>
+              <td><button class="btn btn-secondary btn-sm" onclick="go('company-detail','${c.id}')">View</button></td>
+            </tr>`).join('')}
+      </tbody></table>
+    </div>
+  `);
+}
+
+/* ══ COMPANY DETAIL ═════════════════════════════════════════ */
+async function vCompanyDetail(){
+  setContent('<div class="loading">Loading…</div>');
+  const [coRows,ctRows,clRows]=await Promise.all([getRows(SHEETS.CO),getRows(SHEETS.CT),getRows(SHEETS.CL)]);
+  const co=coRows.map(toCompany).find(c=>c.id===selCompany);
+  if(!co){setContent('<p>Company not found.</p>');return;}
+  const contacts=ctRows.map(toContact).filter(c=>c.companyId===selCompany);
+  const logs=clRows.map(toLog).filter(l=>l.companyId===selCompany).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
+
+  setContent(`
+    <button class="back-btn" onclick="go('companies')">← Back to Companies</button>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="detail-name">${esc(co.name)}</div>
+          ${co.address?`<div class="detail-sub">${esc(co.address)}</div>`:''}
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-secondary btn-sm" onclick="go('add-contact');prefillCompany('${co.id}','${escAttr(co.name)}')">+ Add Contact</button>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><div class="info-label">Address</div><div class="info-value">${esc(co.address)||'—'}</div></div>
+        <div class="info-box"><div class="info-label">Website</div><div class="info-value">${co.website?`<a href="${esc(co.website)}" target="_blank" style="color:var(--accent)">${esc(co.website)}</a>`:'—'}</div></div>
+        <div class="info-box"><div class="info-label">Contacts</div><div class="info-value">${contacts.length}</div></div>
+      </div>
+      ${co.notes?`<div class="info-box"><div class="info-label">Notes</div><div class="info-value" style="white-space:pre-wrap;font-weight:400">${esc(co.notes)}</div></div>`:''}
+    </div>
+
+    <div class="section-label">Contacts at ${esc(co.name)}</div>
+    ${contacts.length===0
+      ? `<div class="empty-state"><h3>No contacts yet</h3><p><button class="link-btn" onclick="go('add-contact');prefillCompany('${co.id}','${escAttr(co.name)}')">Add the first contact</button> for this company.</p></div>`
+      : `<div class="contact-chips">
+          ${contacts.map(c=>`<div class="contact-chip" onclick="go('contact-detail','${c.id}')">
+            <div class="chip-name">${esc(contactName(c))}</div>
+            ${c.role?`<div class="chip-role">${esc(c.role)}</div>`:''}
+            ${c.phone?`<div class="chip-phone">📞 ${esc(c.phone)}</div>`:''}
+          </div>`).join('')}
+        </div>`}
+
+    <div class="section-label">Full Call History (${logs.length})</div>
+    ${logs.length===0
+      ? '<div class="empty-state"><p>No calls logged for this company yet.</p></div>'
+      : `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Contact</th><th>Notes</th><th>Outcome</th><th>Follow-up</th><th>Files</th></tr></thead><tbody>
+        ${logs.map(l=>`<tr>
+          <td style="white-space:nowrap">${l.date}</td>
+          <td><button class="link-btn" onclick="go('contact-detail','${l.contactId}')">${esc(l.contactName)}</button></td>
+          <td style="max-width:280px;white-space:pre-wrap">${esc(l.notes).slice(0,80)}${l.notes.length>80?'…':''}</td>
+          <td>${esc(l.outcome)}</td>
+          <td>${badgeFollowUp(l)}</td>
+          <td class="att-links">${attLinks(l)}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`}
+  `);
+}
+
+/* ══ CONTACTS LIST ══════════════════════════════════════════ */
+async function vContacts(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CT);
+  const cts=rows.map(toContact);
+  window._ctRows=rows;
+
+  setContent(`
+    <div class="toolbar">
+      <h2>Contacts</h2>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV(window._ctRows,['ID','CompanyID','Company','FirstName','LastName','Phone','Email','Role','Notes','Created'],'croc-contacts.csv')">Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="go('add-contact')">+ New Contact</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="ct-search" placeholder="Search by name, company or role…" oninput="filterTable('ct-search','ct-body',['name','company','role'])" autocomplete="off">
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Name</th><th>Company</th><th>Role</th><th>Phone</th><th>Email</th><th></th></tr></thead>
+      <tbody id="ct-body">
+        ${cts.length===0
+          ? '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No contacts yet.</td></tr>'
+          : cts.map(c=>`<tr data-name="${(contactName(c)).toLowerCase()}" data-company="${c.companyName.toLowerCase()}" data-role="${c.role.toLowerCase()}">
+              <td><button class="link-btn" onclick="go('contact-detail','${c.id}')">${esc(contactName(c))}</button></td>
+              <td><button class="link-btn" onclick="go('company-detail','${c.companyId}')">${esc(c.companyName)}</button></td>
+              <td>${esc(c.role)}</td>
+              <td>${esc(c.phone)}</td>
+              <td>${esc(c.email)}</td>
+              <td><button class="btn btn-secondary btn-sm" onclick="go('contact-detail','${c.id}')">View</button></td>
+            </tr>`).join('')}
+      </tbody></table>
+    </div>
+  `);
+}
+
+/* ══ CONTACT DETAIL ═════════════════════════════════════════ */
+async function vContactDetail(){
+  setContent('<div class="loading">Loading…</div>');
+  const [ctRows,clRows]=await Promise.all([getRows(SHEETS.CT),getRows(SHEETS.CL)]);
+  const ct=ctRows.map(toContact).find(c=>c.id===selContact);
+  if(!ct){setContent('<p>Contact not found.</p>');return;}
+  const logs=clRows.map(toLog).filter(l=>l.contactId===selContact).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
+
+  setContent(`
+    <button class="back-btn" onclick="go('company-detail','${ct.companyId}')">← Back to ${esc(ct.companyName)}</button>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="detail-name">${esc(contactName(ct))}</div>
+          <div class="detail-sub">${esc(ct.role)}${ct.role&&ct.companyName?' · ':''}${ct.companyName?`<button class="link-btn" style="font-size:14px" onclick="go('company-detail','${ct.companyId}')">${esc(ct.companyName)}</button>`:''}</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-primary btn-sm" onclick="go('add-log');prefillContact('${ct.id}','${escAttr(contactName(ct))}','${ct.companyId}','${escAttr(ct.companyName)}')">+ Log Call</button>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><div class="info-label">Phone</div><div class="info-value">${esc(ct.phone)||'—'}</div></div>
+        <div class="info-box"><div class="info-label">Email</div><div class="info-value">${esc(ct.email)||'—'}</div></div>
+        <div class="info-box"><div class="info-label">Role</div><div class="info-value">${esc(ct.role)||'—'}</div></div>
+      </div>
+      ${ct.notes?`<div class="info-box"><div class="info-label">Notes</div><div class="info-value" style="white-space:pre-wrap;font-weight:400">${esc(ct.notes)}</div></div>`:''}
+    </div>
+
+    <div class="section-label">Call History (${logs.length})</div>
+    ${logs.length===0
+      ? '<div class="empty-state"><p>No calls logged for this contact yet.</p></div>'
+      : `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Notes</th><th>Outcome</th><th>Follow-up</th><th>Files</th><th>Logged by</th></tr></thead><tbody>
+        ${logs.map(l=>`<tr>
+          <td style="white-space:nowrap">${l.date}</td>
+          <td>${l.time}</td>
+          <td style="max-width:300px;white-space:pre-wrap">${esc(l.notes)}</td>
+          <td>${esc(l.outcome)}</td>
+          <td>${badgeFollowUp(l)}</td>
+          <td class="att-links">${attLinks(l)}</td>
+          <td style="font-size:12px;color:var(--muted)">${esc(l.loggedBy)}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`}
+  `);
+}
+
+/* ══ CALL LOGS LIST ═════════════════════════════════════════ */
+async function vLogs(){
+  setContent('<div class="loading">Loading…</div>');
+  const rows=await getRows(SHEETS.CL);
+  const logs=rows.map(toLog).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
+  window._clRows=rows;
+
+  setContent(`
+    <div class="toolbar">
+      <h2>All Call Logs</h2>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV(window._clRows,['ID','ContactID','Contact','CompanyID','Company','Date','Time','Notes','Outcome','FollowUp','FollowUpDate','AttachURLs','AttachNames','LoggedBy','Created'],'croc-calllogs.csv')">Export CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="go('add-log')">+ Log a Call</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="cl-search" placeholder="Search by contact, company or notes…" oninput="filterTable('cl-search','cl-body',['contact','company','notes'])" autocomplete="off">
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Date</th><th>Contact</th><th>Company</th><th>Notes</th><th>Outcome</th><th>Follow-up</th><th>Files</th></tr></thead>
+      <tbody id="cl-body">
+        ${logs.length===0
+          ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No calls logged yet.</td></tr>'
+          : logs.map(l=>`<tr data-contact="${esc(l.contactName).toLowerCase()}" data-company="${esc(l.companyName).toLowerCase()}" data-notes="${esc(l.notes).toLowerCase()}">
+              <td style="white-space:nowrap">${l.date}</td>
+              <td><button class="link-btn" onclick="go('contact-detail','${l.contactId}')">${esc(l.contactName)}</button></td>
+              <td><button class="link-btn" onclick="go('company-detail','${l.companyId}')">${esc(l.companyName)}</button></td>
+              <td style="max-width:260px">${esc(l.notes).slice(0,70)}${l.notes.length>70?'…':''}</td>
+              <td>${esc(l.outcome)}</td>
+              <td>${badgeFollowUp(l)}</td>
+              <td class="att-links">${attLinks(l)}</td>
+            </tr>`).join('')}
+      </tbody></table>
+    </div>
+  `);
+}
+
+/* ══ ADD COMPANY ════════════════════════════════════════════ */
+function vAddCompany(){
+  setContent(`
+    <div class="card">
+      <div class="card-header"><span class="card-title">New Company</span></div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Company Name *</label><input id="co-name" placeholder="e.g. Smith Farms"></div>
+        <div class="form-group full"><label>Address</label><input id="co-addr" placeholder="Street, Town, State, Postcode"></div>
+        <div class="form-group full"><label>Website</label><input id="co-web" type="url" placeholder="https://"></div>
+        <div class="form-group full"><label>Notes</label><textarea id="co-notes" placeholder="General notes about this company…"></textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" onclick="saveCompany()">Save Company</button>
+        <button class="btn btn-secondary" onclick="go('companies')">Cancel</button>
+      </div>
+    </div>
+  `);
+}
+async function saveCompany(){
+  const name=v('co-name');
+  if(!name){toast('Company name is required.','error');return;}
+  const co={id:uid(),name,address:v('co-addr'),website:v('co-web'),notes:v('co-notes'),createdAt:new Date().toISOString()};
+  try{await appendRow(SHEETS.CO,fromCompany(co));toast('Company saved!','success');go('companies');}
+  catch(e){toast('Error saving company.','error');console.error(e);}
+}
+
+/* ══ ADD CONTACT ════════════════════════════════════════════ */
+let _prefillCoId='', _prefillCoName='';
+function prefillCompany(id,name){_prefillCoId=id;_prefillCoName=name;}
+
+async function vAddContact(){
+  const coRows=await getRows(SHEETS.CO);
+  const cos=coRows.map(toCompany);
+
+  setContent(`
+    <div class="card">
+      <div class="card-header"><span class="card-title">New Contact</span></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Company *</label>
+          <select id="ct-co">
+            <option value="">— Select company —</option>
+            ${cos.map(c=>`<option value="${c.id}" data-name="${escAttr(c.name)}" ${c.id===_prefillCoId?'selected':''}>${esc(c.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>First Name *</label><input id="ct-fn" placeholder="John"></div>
+        <div class="form-group"><label>Last Name</label><input id="ct-ln" placeholder="Smith"></div>
+        <div class="form-group"><label>Phone</label><input id="ct-ph" type="tel" placeholder="0412 345 678"></div>
+        <div class="form-group"><label>Email</label><input id="ct-em" type="email" placeholder="john@smithfarms.com.au"></div>
+        <div class="form-group full"><label>Role / Title</label><input id="ct-role" placeholder="e.g. Manager, Owner, Purchasing"></div>
+        <div class="form-group full"><label>Notes</label><textarea id="ct-notes" placeholder="Any notes about this contact…"></textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+        <button class="btn btn-secondary" onclick="history.back()">Cancel</button>
+      </div>
+    </div>
+  `);
+  _prefillCoId=''; _prefillCoName='';
+}
+async function saveContact(){
+  const sel=document.getElementById('ct-co');
+  const companyId=sel.value;
+  const companyName=sel.options[sel.selectedIndex]?.dataset.name||'';
+  const fn=v('ct-fn');
+  if(!companyId){toast('Please select a company.','error');return;}
+  if(!fn){toast('First name is required.','error');return;}
+  const ct={id:uid(),companyId,companyName,firstName:fn,lastName:v('ct-ln'),phone:v('ct-ph'),email:v('ct-em'),role:v('ct-role'),notes:v('ct-notes'),createdAt:new Date().toISOString()};
+  try{await appendRow(SHEETS.CT,fromContact(ct));toast('Contact saved!','success');go('company-detail',companyId);}
+  catch(e){toast('Error saving contact.','error');console.error(e);}
+}
+
+/* ══ ADD CALL LOG ═══════════════════════════════════════════ */
+let _pfContactId='', _pfContactName='', _pfCoId='', _pfCoName='';
+function prefillContact(cid,cn,coid,coin){_pfContactId=cid;_pfContactName=cn;_pfCoId=coid;_pfCoName=coin;}
+
+async function vAddLog(){
+  const ctRows=await getRows(SHEETS.CT);
+  const cts=ctRows.map(toContact);
+  const now=new Date();
+  const todayVal=todayStr();
+  const timeVal=now.toTimeString().slice(0,5);
+
+  setContent(`
+    <div class="card">
+      <div class="card-header"><span class="card-title">Log a Call</span></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Contact *</label>
+          <select id="log-ct" onchange="onLogContactChange()">
+            <option value="">— Select contact —</option>
+            ${cts.map(c=>`<option value="${c.id}" data-name="${escAttr(contactName(c))}" data-coid="${c.companyId}" data-coname="${escAttr(c.companyName)}" ${c.id===_pfContactId?'selected':''}>${esc(contactName(c))} — ${esc(c.companyName)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group" id="company-display" style="${_pfCoName?'':'display:none'}">
+          <label>Company</label>
+          <input id="log-co-disp" readonly value="${escAttr(_pfCoName)}" style="background:var(--bg);color:var(--muted)">
+        </div>
+        <input type="hidden" id="log-ct-name" value="${escAttr(_pfContactName)}">
+        <input type="hidden" id="log-co-id"   value="${escAttr(_pfCoId)}">
+        <input type="hidden" id="log-co-name" value="${escAttr(_pfCoName)}">
+        <div class="form-group"><label>Date *</label><input id="log-date" type="date" value="${todayVal}"></div>
+        <div class="form-group"><label>Time</label><input id="log-time" type="time" value="${timeVal}"></div>
+        <div class="form-group full"><label>Call Notes *</label><textarea id="log-notes" placeholder="What was discussed? Key points from the call…"></textarea></div>
+        <div class="form-group full"><label>Outcome</label><input id="log-outcome" placeholder="e.g. Interested in quote, Will call back, Order placed"></div>
+        <div class="form-group">
+          <label>Follow-up Required?</label>
+          <select id="log-fu" onchange="document.getElementById('fu-date-row').style.display=this.value==='Yes'?'':'none'">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+        <div class="form-group" id="fu-date-row" style="display:none">
+          <label>Follow-up Date</label>
+          <input id="log-fu-date" type="date">
+        </div>
+        <div class="form-group full">
+          <label>Attachments (Photos / Documents)</label>
+          <div class="file-drop" id="file-drop"
+               onclick="document.getElementById('file-input').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="handleDrop(event)">
+            <p>📎 Click to upload or drag &amp; drop files here</p>
+            <p style="font-size:12px;margin-top:4px;color:var(--muted)">Photos, PDFs, Word docs — any format</p>
+          </div>
+          <input type="file" id="file-input" multiple style="display:none" onchange="handleFiles(event.target.files)">
+          <div id="file-list"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-primary" id="save-log-btn" onclick="saveLog()">Save Call Log</button>
+        <button class="btn btn-secondary" onclick="history.back()">Cancel</button>
+      </div>
+    </div>
+  `);
+  window._pendingFiles=[];
+  // Trigger prefill display
+  if(_pfContactId) onLogContactChange();
+  _pfContactId=''; _pfContactName=''; _pfCoId=''; _pfCoName='';
+}
+
+function onLogContactChange(){
+  const sel=document.getElementById('log-ct');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  document.getElementById('log-ct-name').value=opt.dataset.name||'';
+  document.getElementById('log-co-id').value=opt.dataset.coid||'';
+  document.getElementById('log-co-name').value=opt.dataset.coname||'';
+  const disp=document.getElementById('company-display');
+  document.getElementById('log-co-disp').value=opt.dataset.coname||'';
+  disp.style.display='';
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+}
+function handleFiles(files){
+  if(!window._pendingFiles) window._pendingFiles=[];
+  Array.from(files).forEach(f=>{
+    window._pendingFiles.push(f);
+    const el=document.createElement('div');
+    el.className='file-item';
+    el.innerHTML=`<span>📄 ${esc(f.name)} <span style="color:var(--muted)">(${(f.size/1024).toFixed(1)} KB)</span></span>
+      <button class="file-remove" onclick="removeFile(this,'${escAttr(f.name)}')">✕</button>`;
+    document.getElementById('file-list').appendChild(el);
+  });
+}
+function removeFile(btn,name){
+  window._pendingFiles=window._pendingFiles.filter(f=>f.name!==name);
+  btn.closest('.file-item').remove();
+}
+
+async function saveLog(){
+  const contactId=v('log-ct');
+  const contactName_=v('log-ct-name');
+  const companyId=v('log-co-id');
+  const companyName_=v('log-co-name');
+  const notes=v('log-notes');
+  if(!contactId){toast('Please select a contact.','error');return;}
+  if(!notes){toast('Call notes are required.','error');return;}
+  const btn=document.getElementById('save-log-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  // Upload files
+  const urls=[], names=[];
+  for(const f of (window._pendingFiles||[])){
+    try{const r=await uploadFile(f);urls.push(r.url);names.push(r.name);}
+    catch(e){toast(`Could not upload ${f.name} — skipped.`,'error');}
+  }
+  const log={
+    id:uid(),contactId,contactName:contactName_,companyId,companyName:companyName_,
+    date:v('log-date'),time:v('log-time'),notes,outcome:v('log-outcome'),
+    followUp:v('log-fu'),followUpDate:v('log-fu-date')||'',
+    attachURLs:urls.join('|'),attachNames:names.join('|'),
+    loggedBy:curUser?.name||curUser?.email||'',
+    createdAt:new Date().toISOString()
+  };
+  try{
+    await appendRow(SHEETS.CL,fromLog(log));
+    toast('Call logged!','success');
+    go('contact-detail',contactId);
+  }catch(e){toast('Error saving log.','error');btn.textContent='Save Call Log';btn.disabled=false;}
+}
+
+/* ══ HELPERS ════════════════════════════════════════════════ */
+function setContent(html){document.getElementById('content').innerHTML=html}
+function v(id){return(document.getElementById(id)?.value||'').trim()}
+function sv(id,val){const el=document.getElementById(id);if(el)el.value=val||''}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escAttr(s){return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+
+function badgeFollowUp(l){
+  return l.followUp==='Yes'
+    ? `<span class="badge badge-yes">Yes — ${l.followUpDate}</span>`
+    : `<span class="badge badge-no">No</span>`;
+}
+function attLinks(l){
+  const us=(l.attachURLs||'').split('|').filter(Boolean);
+  const ns=(l.attachNames||'').split('|').filter(Boolean);
+  if(!us.length) return '—';
+  return us.map((u,i)=>`<a href="${u}" target="_blank">${esc(ns[i]||'File '+(i+1))}</a>`).join('');
+}
+
+function filterTable(searchId, bodyId, fields){
+  const q=document.getElementById(searchId).value.toLowerCase();
+  document.querySelectorAll(`#${bodyId} tr`).forEach(tr=>{
+    const match=fields.some(f=>(tr.dataset[f]||'').includes(q));
+    tr.style.display=match?'':'none';
+  });
+}
+
+function exportCSV(rows,headers,filename){
+  if(!rows) return;
+  const data=[headers,...rows];
+  const csv=data.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=filename; a.click();
+}
+
+function toast(msg,type='info'){
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+/* ══ BOOT ═══════════════════════════════════════════════════ */
+loadCfg();
+
+const _s1=document.createElement('script');
+_s1.src='https://apis.google.com/js/api.js';
+_s1.onload=gapiLoaded;
+document.head.appendChild(_s1);
+
+const _s2=document.createElement('script');
+_s2.src='https://accounts.google.com/gsi/client';
+_s2.onload=gisLoaded;
+document.head.appendChild(_s2);
+</script>
+</body>
+</html>
